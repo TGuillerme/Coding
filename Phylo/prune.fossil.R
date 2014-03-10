@@ -2,7 +2,7 @@
 #Prune fossils on one or multiple trees
 ##########################
 #Remove the fossils from one or multiple trees
-#v01
+#v.0.1
 ##########################
 #SYNTAX :
 #<phy> a Phylo object or a multiPhylo or the name of a pattern of multiPhylo files. If phy is a pattern, the output will be saved as *.pruned and the output will be verbose.
@@ -19,6 +19,8 @@
 ##########################
 
 prune.fossil<-function(phy, fossil_names){
+#Something stupid
+
 
 #HEADER
 
