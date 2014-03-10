@@ -9,7 +9,7 @@
 #<fossil_name> a vector containing the list of fossils to remove or a string of character containing the fossil's name pattern.
 ##########################
 #----
-#guillert(at)tcd.ie -  10/03/2014
+#guillert(at)tcd.ie -  06/03/2014
 ##########################
 #Requirements:
 #-R 3
