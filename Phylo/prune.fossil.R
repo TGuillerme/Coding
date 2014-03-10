@@ -19,8 +19,6 @@
 ##########################
 
 prune.fossil<-function(phy, fossil_names){
-#Something stupid
-
 
 #HEADER
 
@@ -80,7 +78,7 @@ prune.fossil<-function(phy, fossil_names){
                 prune<-phy[[4]][grep(fossil.pattern,phy[[4]])]
                 dropped<-drop.tip(phy, prune)
                 return(dropped)
-            }
+            } 
     
         } else {
 
@@ -105,7 +103,7 @@ prune.fossil<-function(phy, fossil_names){
 
 #PRUNING THE TREES
 
-    if(phy.list=FALSE){
+    if(phy.list==FALSE){
 
         #Run the simple FUN.prune.fossil function
         drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
@@ -126,7 +124,7 @@ prune.fossil<-function(phy, fossil_names){
             #Pruning the tree
             drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
             cat(format(Sys.time(), "%H:%M:%S"), "-",tree.name,"pruned","\n")
-            write.nexus(drop, file=paste(c(tree.name, ".pruned", phy.pattern)), sep="")
+            write.nexus(drop, file=paste(tree.name, ".pruned", phy.pattern, sep=""))
         }
     }
 #end
