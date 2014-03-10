@@ -6,7 +6,6 @@
 #----
 #guillert(at)tcd.ie & healyke(at)tcd.ie - 13/02/2013
 ##########################
-#this is kevins attempt to fuck up your functions. enjoy
 
 SumMultiPGLS<-function(chain.name){
 #Data checking
