@@ -2,14 +2,16 @@
 #Prune fossils on one or multiple trees
 ##########################
 #Remove the fossils from one or multiple trees
-#v.0.1
+#v.0.2
+#Update: allow to read trees in newick or nexus file using option nexus=TRUE/FALSE
 ##########################
 #SYNTAX :
 #<phy> a Phylo object or a multiPhylo or the name of a pattern of multiPhylo files. If phy is a pattern, the output will be saved as *.pruned and the output will be verbose.
 #<fossil_name> a vector containing the list of fossils to remove or a string of character containing the fossil's name pattern.
+#<nexus> whether the trees from the pattern chain are in newick or nexus format (default is nexus=TRUE)
 ##########################
 #----
-#guillert(at)tcd.ie -  06/03/2014
+#guillert(at)tcd.ie -  18/03/2014
 ##########################
 #Requirements:
 #-R 3
@@ -18,7 +20,7 @@
 ##install.packages('ape')
 ##########################
 
-prune.fossil<-function(phy, fossil_names){
+prune.fossil<-function(phy, fossil_names, nexus=TRUE){
 
 #HEADER
 
@@ -59,6 +61,11 @@ prune.fossil<-function(phy, fossil_names){
             }
         }
     } 
+
+#nexus
+    if(class(nexus) != 'logical') {
+        stop('nexus must be logical')
+    }
 
 #FUNCTIONS
 
@@ -119,7 +126,11 @@ prune.fossil<-function(phy, fossil_names){
             tree.name<-strsplit(phy.list[n], phy.pattern)[[1]][1]
 
             #Reading the tree
-            phy<-read.nexus(phy.list[n])
+            if (nexus==TRUE) {
+                phy<-read.nexus(phy.list[n])
+            } else {
+                phy<-read.tree(phy.list[n])
+            }
 
             #Pruning the tree
             drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
