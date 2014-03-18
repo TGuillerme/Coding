@@ -9,8 +9,9 @@
 #<number of random draws> number of random draws for the comparison
 #<output> a chain name for the output
 ##########################
-#version: 0.2
+#version: 0.3
 #Update: improved output format
+#Update: correction on the random tree selection from the ref tree: if the ref tree is unique, no sample is performed any more.
 #----
 #guillert(at)tcd.ie - 26/02/2014
 ##########################
@@ -30,13 +31,6 @@ species=$3
 draws=$4
 output=$5
 
-    #testers
-    #REFtreeset=$(echo 'Tree1.tre')
-    #INPtreeset=$(echo 'Tree2.tre')
-    #species=$(echo '51')
-    #draws=$(echo '10')
-    #output=$(echo 'test_output')
-
 #RANDOM DRAWS LIST
 
 #Make the nexus file header
@@ -45,8 +39,11 @@ let "header += 5"
 head -$header $REFtreeset > HEADER_${output}.Tree.tmp
 
 #Make the random draws in both list of trees
-REFntrees=$(grep '\[\&U\]' $REFtreeset | wc -l)
-INPntrees=$(grep '\[\&U\]' $INPtreeset | wc -l)
+REFntrees=$(grep 'TREE\|Tree\|tree' $REFtreeset | grep '=\[\|=[[:space:]]\[' | wc -l)
+
+INPntrees=$(grep 'TREE\|Tree\|tree' $INPtreeset | grep '=\[\|=[[:space:]]\[' | wc -l)
+
+INPntrees=$(grep '=' $INPtreeset | wc -l)
 
 #Create the list of trees to sample. If the provided number of random draws is higher than the number of trees, the sample is done with replacement.
 echo "if($REFntrees < $draws) {
