@@ -36,24 +36,21 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
 
         #Is fossil_name a pattern or a list?
         if(length(fossil_names) > 1 ) {
-            fossil.list=TRUE
-        } else {
             fossil.list=FALSE
+        } else {
+            fossil.list=TRUE
             fossil.pattern=fossil_names
         }
     }
 
 #phy
     if(class(phy) =='phylo') {
-        tree.set=FALSE
         phy.list=FALSE
     } else {
         if(class(phy) == 'multiPhylo') {
-            tree.set=TRUE
             phy.list=FALSE
         } else {
             if(class(phy) =='character') {
-                tree.set=TRUE
                 phy.list=TRUE
                 phy.pattern=phy
             } else {    
@@ -73,16 +70,16 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
         if(tree.set==FALSE){
 
             #Only one tree as input
-            if(fossil.list==TRUE){
+            if(fossil.list==FALSE){
 
                 #Fossils names is provided
                 dropped<-drop.tip(phy, fossil_names)
-            removeeturn(dropped)
+                return(dropped)
         
             } else {
 
                 #Fossil names is not provided
-                prune<-phy[[4]][grep(fossil.pattern,phy[[4]])]
+                prune<-phy$tip.label[grep(fossil.pattern,phy$tip.label)]
                 dropped<-drop.tip(phy, prune)
                 return(dropped)
             } 
@@ -90,7 +87,7 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
         } else {
 
             #Phy is a multiPhylo object
-            if(fossil.list==TRUE){
+            if(fossil.list==FALSE){
 
                 #Fossil names is provided
                 dropped.trees<-lapply(phy, function (trees) drop.tip(trees, fossil_names))
@@ -100,7 +97,7 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
             } else {
 
                 #Fossil names is not provide
-                prune<-phy[[1]][[4]][grep(fossil.pattern,phy[[1]][[4]])]
+                prune<-phy[[1]]$tip.label[grep(fossil.pattern,phy[[1]]$tip.label)]
                 dropped.trees<-lapply(phy, function (trees) drop.tip(trees, prune))
                 class(dropped.trees)<-'multiPhylo'
                 return(dropped.trees)
@@ -112,9 +109,27 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
 
     if(phy.list==FALSE){
 
-        #Run the simple FUN.prune.fossil function
-        drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
-        return(drop)
+        if(class(phy) == 'phylo') {
+
+            #Run the FUN.prune.fossil function on a single tree
+            tree.set=FALSE
+            drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
+            return(drop)
+        }
+
+        if(class(phy) == 'multiPhylo') {
+
+            #Run the FUN.prune.fossil function on multiple trees
+            tree.set=FALSE
+            drop<-NULL
+            for (i in 1:length(phy)) {
+                drop[[i]]<-FUN.prune.fossil(phy[[i]], fossil_names, tree.set, fossil.list)
+            }
+            class(drop)<-'multiPhylo'
+            names(drop)<-names(phy)
+            return(drop)
+        }
+
     } else {
 
         #Creating the file list
@@ -130,6 +145,13 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
                 phy<-read.nexus(phy.list[n])
             } else {
                 phy<-read.tree(phy.list[n])
+            }
+
+            #is phy a set of trees?
+            if(class(phy) == 'multiPhylo') {
+                tree.set=TRUE
+            } else {
+                tree.set=FALSE
             }
 
             #Pruning the tree

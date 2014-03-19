@@ -22,6 +22,7 @@
 #-TreeCmp folder to be installed at the level of the analysis
 ##########################
 
+#!/bin/sh
 #INPUT
 
 #Input values
@@ -40,10 +41,7 @@ head -$header $REFtreeset > HEADER_${output}.Tree.tmp
 
 #Make the random draws in both list of trees
 REFntrees=$(grep 'TREE\|Tree\|tree' $REFtreeset | grep '=\[\|=[[:space:]]\[' | wc -l)
-
 INPntrees=$(grep 'TREE\|Tree\|tree' $INPtreeset | grep '=\[\|=[[:space:]]\[' | wc -l)
-
-INPntrees=$(grep '=' $INPtreeset | wc -l)
 
 #Create the list of trees to sample. If the provided number of random draws is higher than the number of trees, the sample is done with replacement.
 echo "if($REFntrees < $draws) {
