@@ -138,7 +138,9 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
         for (n in 1:length(phy.list)){
 
             #Name of the tree
-            tree.name<-strsplit(phy.list[n], phy.pattern)[[1]][1]
+            tree.name.list<-strsplit(phy.list[n], phy.pattern)[[1]]
+            tree.name.pos<-grep('[:alpha:]', tree.name.list)
+            tree.name<-tree.name.list[tree.name.pos]
 
             #Reading the tree
             if (nexus==TRUE) {
