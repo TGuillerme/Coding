@@ -2,7 +2,9 @@
 #Chain TreeCmp Read
 ##########################
 #Combine the data of .Cmp files from TEM_TreeCmp.sh into R by chains
-#v.0.1
+#v.0.2
+#Update: improved input format
+#Update: output is now a 'TreeCmp' list class
 ##########################
 #SYNTAX :
 #<chain> the chain name to read in
@@ -97,6 +99,7 @@ FUN.TreeCmp.Read<-function(chain, suffix, sep, header, verbose) {
 #COMBINING THE DATA SETS
 
     combined.list<-FUN.TreeCmp.Read(chain, suffix, sep, header, verbose)
+    class(combined.list)<-'TreeCmp'
     return(combined.list)    
 
 #End
