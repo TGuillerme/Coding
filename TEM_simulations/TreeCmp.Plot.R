@@ -3,8 +3,10 @@
 ##########################
 #Calculate the CI and the mode of a given metric using TreeCmp class objects
 #Function modified from sumBTC (guillert(at)tcd.ie - 19/02/2014)
-#v.0.1
+#v.0.3
 #Update: the three core functions have been isolated
+#Update: in FUN.hdr, allows to read data from similar tree comparison (NTS=1), setting $hdr and $alpha to NA and $mode to 1 if var(data) == 0
+#Update: in FUN.densityplot, allows to plot data from similar tree comparison (NTS=1), ignoring $hdr and $alpha and ploting only the mode (=1)
 ##########################
 #SYNTAX :
 #<data> an object of the class TreeCmp
@@ -87,7 +89,7 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
         cat('Save.details options is enabled and will generate a pdf file for each comparison', '\n')
         cat('This options might increase the computational time','\n')
     }
-
+    
 #FUNCTIONS
 
     #Calculates the hdr for each comparison set
@@ -95,7 +97,13 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
         hdr.results<-NULL
 
         for (i in 1:length(data)) {
-            hdr.results[[i]]<-hdr(data[[i]][,metric.column], probs, h = bw.nrd0(data[[i]][,metric.column])) 
+            if(var(data[[i]][,metric.column]) == 0) {
+                #If no variance, make the results equal to 1
+                hdr.results[[i]]<-list(hdr=NA,mode=1,alpha=NA)
+            } else {
+                #Else calculate the normal hdr
+                hdr.results[[i]]<-hdr(data[[i]][,metric.column], probs, h = bw.nrd0(data[[i]][,metric.column])) 
+            }
         }
 
         names(hdr.results)<-names(data)
@@ -133,21 +141,28 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
         clr = gray((9:1)/10)
         clrs <- rep(clr, 5)
 
-        #Set the scale
-        scl=1
-
         #Plotting the data distribution
+        #disable warnings if one hdr value = NA
+        options(warn=-1)
         for (j in 1:n) {
             temp <- hdr.results[[j]]
-            line_widths <- seq(2, 20, by = 4) * scl
-            bwd <- c(0.1, 0.15, 0.2, 0.25, 0.3) * scl
+            line_widths <- seq(2, 20, by = 4)
+            bwd <- c(0.1, 0.15, 0.2, 0.25, 0.3)
 
             for (k in 1:length(probs)) {
-                temp2 <- temp$hdr[k, ]
-                polygon(c(j - bwd[k], j - bwd[k], j + bwd[k], j + bwd[k]), c(min(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), min(temp2[!is.na(temp2)])), col = clrs[k])
-                points(j,temp$mode,pch=19)
+                if(is.na(temp$hdr)) {
+                    #Ploting only the mode if hdr=NA
+                    points(j,temp$mode,pch=19)
+                } else {
+                    #Plot the probabilities distribution
+                    temp2 <- temp$hdr[k, ]
+                    polygon(c(j - bwd[k], j - bwd[k], j + bwd[k], j + bwd[k]), c(min(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), min(temp2[!is.na(temp2)])), col = clrs[k])
+                    points(j,temp$mode,pch=19)
+                }
             }
         }
+        #enable warnongs
+        options(warn=1)
     }  
 
     #Saves the details for each comparison (graph and values)
