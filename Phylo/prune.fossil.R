@@ -1,17 +1,20 @@
 ##########################
 #Prune fossils on one or multiple trees
 ##########################
-#Remove the fossils from one or multiple trees
-#v.0.2
+#Remove the fossils from one or multiple trees. The trees can be in R environment or present out of R environment under a pattern name.
+#v.0.3
 #Update: allow to read trees in newick or nexus file using option nexus=TRUE/FALSE
+#Update: write options allows to indicate whether to write and return the results or whether the function just returns the results
+#Update: fixed the nexus=FALSE option, the prune phylogeny is now returned
 ##########################
 #SYNTAX :
-#<phy> a Phylo object or a multiPhylo or the name of a pattern of multiPhylo files. If phy is a pattern, the output will be saved as *.pruned and the output will be verbose.
+#<phy> a Phylo object or a multiPhylo or the name of a pattern of multiPhylo files. If phy is a pattern, the output will be saved as *.pruned and the output will be verbose, also, no return will be given.
 #<fossil_name> a vector containing the list of fossils to remove or a string of character containing the fossil's name pattern.
+#<write> whether to write the results or not (default is write=FALSE). N.B. if phy is a pattern, write option is automatically set to TRUE
 #<nexus> whether the trees from the pattern chain are in newick or nexus format (default is nexus=TRUE)
 ##########################
 #----
-#guillert(at)tcd.ie -  18/03/2014
+#guillert(at)tcd.ie -  25/03/2014
 ##########################
 #Requirements:
 #-R 3
@@ -20,7 +23,7 @@
 ##install.packages('ape')
 ##########################
 
-prune.fossil<-function(phy, fossil_names, nexus=TRUE){
+prune.fossil<-function(phy, fossil_names, write=FALSE, nexus=TRUE){
 
 #HEADER
 
@@ -52,6 +55,7 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
         } else {
             if(class(phy) =='character') {
                 phy.list=TRUE
+                write=TRUE
                 phy.pattern=phy
             } else {    
                 stop('Phy must be a phylo or multiPhylo object or a name pattern')
@@ -60,8 +64,13 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
     } 
 
 #nexus
+    if(class(write) != 'logical') {
+        stop('write option must be logical')
+    }
+
+#nexus
     if(class(nexus) != 'logical') {
-        stop('nexus must be logical')
+        stop('nexus option must be logical')
     }
 
 #FUNCTIONS
@@ -109,11 +118,21 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
 
     if(phy.list==FALSE){
 
+        #Given phy is a phylo or multiPhylo object (i.e. phy is already in the R environment)
         if(class(phy) == 'phylo') {
 
             #Run the FUN.prune.fossil function on a single tree
             tree.set=FALSE
             drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
+
+            if(write == TRUE) {
+                if(nexus == TRUE) {
+                    write.nexus(drop, file="pruned_tree.tre")
+                } else {
+                    write.tree(drop, file="pruned_tree.tre")
+                }
+            }
+
             return(drop)
         }
 
@@ -127,10 +146,21 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
             }
             class(drop)<-'multiPhylo'
             names(drop)<-names(phy)
+
+            if(write == TRUE) {
+                if(nexus == TRUE) {
+                    write.nexus(drop, file="pruned_trees.tre")
+                } else {
+                    write.tree(drop, file="pruned_trees.tre")
+                }
+            }
+
             return(drop)
         }
 
     } else {
+
+        #Given phy is a pattern and has to be imported (i.e. phy is not in the R environment)
 
         #Creating the file list
         phy.list<-list.files(pattern=phy.pattern)
@@ -159,7 +189,11 @@ prune.fossil<-function(phy, fossil_names, nexus=TRUE){
             #Pruning the tree
             drop<-FUN.prune.fossil(phy, fossil_names, tree.set, fossil.list)
             cat(format(Sys.time(), "%H:%M:%S"), "-",tree.name,"pruned","\n")
-            write.nexus(drop, file=paste(tree.name, ".pruned", phy.pattern, sep=""))
+            if(nexus == TRUE) {
+                write.nexus(drop, file=paste("pruned-", tree.name, ".", phy.pattern, sep=""))
+            } else {
+                write.tree(drop, file=paste("pruned-", tree.name, ".", phy.pattern, sep=""))
+            }
         }
     }
 #end
