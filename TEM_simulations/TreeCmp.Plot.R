@@ -3,20 +3,28 @@
 ##########################
 #Calculate the CI and the mode of a given metric using TreeCmp class objects
 #Function modified from sumBTC (guillert(at)tcd.ie - 19/02/2014)
-#v.0.3
+#v.1.0
 #Update: the three core functions have been isolated
 #Update: in FUN.hdr, allows to read data from similar tree comparison (NTS=1), setting $hdr and $alpha to NA and $mode to 1 if var(data) == 0
 #Update: in FUN.densityplot, allows to plot data from similar tree comparison (NTS=1), ignoring $hdr and $alpha and ploting only the mode (=1)
+#Update: the number of probabilities level don't need to be 3 any more
+#Update: colours are now accepted
+#Update: results can be plotted as lines
+#Update: allow to stack the plots with add=TRUE
 ##########################
 #SYNTAX :
 #<data> an object of the class TreeCmp
 #<metric.number> the name of the metric of interest
 #<probs> a vector probabilities levels (default = c(95,75,50)).
 #<plot> whether to plot the results or not (default = TRUE).
-#<save.details> whether to save the details of each comparison (default=FALSE). If TRUE, saves a density plot for each comparison. The chain name will be the one given in 'data'.
+#<col> a colour for the ploting (default="black"). Is ignored if plot=FALSE.
+#<lines> whether to plot the results as lines instead than as boxplots (default=FALSE). Is ignored if plot=FALSE.
+#<add> whether to add to the current plot (default=FALSE). Is ignored if plot=FALSE.
+#<shift> a numerical value between 0 and 0.6 for shifting the lines. Is ignored if plot=FALSE, lines=FALSE, add=FALSE.
+#<save.details> whether to save the details of each comparison (default=FALSE). If TRUE, saves a density plot for each comparison. The chain name will be the one given in 'data'. Is ignored if plot=FALSE.
 ##########################
 #----
-#guillert(at)tcd.ie - 21/03/2014
+#guillert(at)tcd.ie - 08/04/2014
 ##########################
 #Requirements:
 #-R 3
@@ -24,7 +32,7 @@
 #-R TreeCmp objects
 ##########################
 
-TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.details=FALSE) {
+TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, col='black', lines=FALSE, add=FALSE, shift=0, save.details=FALSE) {
 
 #HEADER
 
@@ -68,11 +76,7 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
     }
 
     #probs
-    if(class(probs) == 'numeric'){
-        if(length(probs) != 3){
-            stop('Probs should contain three probabilities levels')
-        }
-    } else {
+    if(class(probs) != 'numeric'){
         stop('Probs are not numeric')
     }
 
@@ -80,6 +84,40 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
     if(class(plot) != 'logical'){
         stop('Plot is not logical')
     }
+
+    #col
+    if(class(col) != 'character'){
+        stop('Unknown color')
+    } else {
+        border<-col
+    }
+
+    #lines
+    if(class(lines) != 'logical'){
+        stop('Lines is not logical')
+    }
+
+    #add
+    if(class(add) != 'logical'){
+        stop('Lines is not logical')
+    }
+
+    #shift
+    if(plot==TRUE){
+        if(lines==TRUE){
+            if(add==TRUE){
+                if(class(shift) != 'numeric'){
+                    stop('Shift value must be within the interval [0:0.6]')
+                }
+                if(shift > 0.6 ){
+                    stop('Shift value must be within the interval [0:0.6]')
+                }
+                if(shift < 0){
+                    stop('Shift value must be within the interval [0:0.6]')
+                }
+            } else {shift=0}
+        } else {shift=0}
+    } else {shift=0}
 
     #save.details
     if(class(save.details) != 'logical'){
@@ -112,7 +150,7 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
     }
 
     #Density Plot function (from densityplot.R by Andrew Jackson - a.jackson@tcd.ie)
-    FUN.densityplot<-function (data, metric.column, data.rows, probs, hdr.results) {
+    FUN.densityplot<-function (data, metric.column, data.rows, probs, hdr.results, border, lines, add, shift) {
 
         #Transform dat into a column format
         dat<-matrix(NA, nrow=max(data.rows), ncol=data.length)
@@ -132,18 +170,21 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
         ylabels<-colnames(data[[1]][metric.column])
 
         #Set up the plot
-        ylims<-c(min(dat, na.rm=TRUE) - 0.1*min(dat, na.rm=TRUE), max(dat, na.rm=TRUE) + 0.1*(max(dat, na.rm=TRUE)))
-        xspc<-0.5
-        plot(1,1, xlab='', ylab=ylabels, main=paste('','', sep=''), xlim= c(1 - xspc, n + xspc), ylim=ylims, type='n', xaxt='n')
-        axis(side = 1, at = 1:n, labels = (as.character(names(dat))), las=2, cex=0.75)
-
+        if (add==FALSE) {
+            ylims<-c(min(dat, na.rm=TRUE) - 0.1*min(dat, na.rm=TRUE), max(dat, na.rm=TRUE) + 0.1*(max(dat, na.rm=TRUE)))
+            xspc<-0.5
+            plot(1,1, xlab='', ylab=ylabels, main=paste('','', sep=''), xlim= c(1 - xspc, n + xspc), ylim=ylims, type='n', xaxt='n')
+            axis(side = 1, at = 1:n, labels = (as.character(names(dat))), las=2, cex=0.75)
+        }
         #Set the colors (grayscale)
         clr = gray((9:1)/10)
         clrs <- rep(clr, 5)
 
         #Plotting the data distribution
+
         #disable warnings if one hdr value = NA
         options(warn=-1)
+
         for (j in 1:n) {
             temp <- hdr.results[[j]]
             line_widths <- seq(2, 20, by = 4)
@@ -156,12 +197,18 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
                 } else {
                     #Plot the probabilities distribution
                     temp2 <- temp$hdr[k, ]
-                    polygon(c(j - bwd[k], j - bwd[k], j + bwd[k], j + bwd[k]), c(min(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), min(temp2[!is.na(temp2)])), col = clrs[k])
-                    points(j,temp$mode,pch=19)
+
+                    #Lines options
+                    if(lines==FALSE) {
+                        polygon(c(j - bwd[k], j - bwd[k], j + bwd[k], j + bwd[k]), c(min(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)]), min(temp2[!is.na(temp2)])), col = clrs[k], border=border)
+                    } else {
+                        lines(c(j+shift,j+shift), c(min(temp2[!is.na(temp2)]), max(temp2[!is.na(temp2)])), lwd=1+(k*2-2), lty=(length(probs)-(k-1)), col=border)  
+                    }
+                    points(j+shift,temp$mode,pch=19, col=border)
                 }
             }
         }
-        #enable warnongs
+        #enable warnings
         options(warn=1)
     }  
 
@@ -188,7 +235,7 @@ TreeCmp.Plot<-function(data, metric, probs=c(95, 75, 50), plot=TRUE, save.detail
 
     #Optional plot
     if (plot == TRUE) {
-        FUN.densityplot(data, metric.column, data.rows, probs, hdr.results)
+        FUN.densityplot(data, metric.column, data.rows, probs, hdr.results, border, lines, add, shift)
     }
 
     #Optional saving
