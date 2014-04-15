@@ -1,11 +1,21 @@
 ##########################
 #Measurement error checking
 ##########################
-#Checking the measurement error following Cooper & Purvis 2009 method
-#v1.1
-#----
-#sfinlay(at)tcd.ie & guillert(at)tcd.ie - 15/04/2013
+#Checking the measurement error following Cooper & Purvis 2009 method (spread) or Yezerinac et al 1992 (variance)
+#v.2
+#Update: Cooper & Purvis and Yezerinac method allowed
 ##########################
+#SYNTAX :
+#<phy> a Phylo object or a multiPhylo or the name of a pattern of multiPhylo files. If phy is a pattern, the output will be saved as *.pruned and the output will be verbose, also, no return will be given.
+#<fossil_name> a vector containing the list of fossils to remove or a string of character containing the fossil's name pattern.
+#<write> whether to write the results or not (default is write=FALSE). N.B. if phy is a pattern, write option is automatically set to TRUE
+#<nexus> whether the trees from the pattern chain are in newick or nexus format (default is nexus=TRUE)
+##########################
+#----
+#sfinlay(at)tcd.ie & guillert(at)tcd.ie - 14/04/2014
+##########################
+#Requirements:
+#-R 3
 
 
 MesErr<-function(data, ID=1, measurement=2, value=3, coeff.var=5, spread=25, filename="filename")
@@ -108,3 +118,31 @@ for (i in 1:length(levels(data[[ID]]))){
 	print(output[c(errors),c(1,2)])	
 	return(ret)
 	}
+
+
+
+
+
+
+
+
+
+	n<-<your number of specimens>
+m<-<your number of independent measurements (i.e. how many time you measured feature X for each specimens)
+
+#Creates your index vector
+index<-gl(n,m)
+
+#aov model
+model<-summary(aov(data$measure~ index)
+
+#Your mean sum squares
+MSS.within<-model[[1]][2,3]
+MSS.among<-model[[1]][1,3]
+
+#Your sum squared
+ss.within<-MSS.within
+ss.among<-(MSamong-MSwithin)/m
+
+#Your measurement error
+ME<-ss.within/(ss.within+ss.among)*100
