@@ -1,7 +1,7 @@
 ##########################
 #Uses TreeCmp java script to compare the distributions of Bayesian trees
 ##########################
-#SYNTAX: TEM_TreeCmp_v <reference.treeset> <input.treeset> <number of species> <number of random draws> <output>
+#SYNTAX: TEM_TreeCmp <reference.treeset> <input.treeset> <number of species> <number of random draws> <output>
 #with:
 #<reference.treeset> a nexus file with the reference trees
 #<input.treeset> a nexus file with the trees to compare to the reference tree
@@ -9,11 +9,12 @@
 #<number of random draws> number of random draws for the comparison
 #<output> a chain name for the output
 ##########################
-#version: 0.3
+#version: 0.4
 #Update: improved output format
 #Update: correction on the random tree selection from the ref tree: if the ref tree is unique, no sample is performed any more.
+#Update: cleaning improved (remove the files from the concern chain only)
 #----
-#guillert(at)tcd.ie - 26/02/2014
+#guillert(at)tcd.ie - 16/04/2014
 ##########################
 #Requirements:
 #-R 3.x
@@ -77,7 +78,14 @@ do
 done
 
 #Removing the extra trees
-rm *.Tree.tmp
+rm REFtreeset_tree*.Tree.tmp
+rm REFtreeset_tree**.Tree.tmp
+rm REFtreeset_tree***.Tree.tmp
+rm REFtreeset_tree****.Tree.tmp
+rm INPtreeset_tree*.Tree.tmp
+rm INPtreeset_tree**.Tree.tmp
+rm INPtreeset_tree***.Tree.tmp
+rm INPtreeset_tree****.Tree.tmp
 
 #SUMMARIZING THE COMPARISONS
 
@@ -93,7 +101,11 @@ do
 done
 
 #Removing extra comparisons
-rm *.Cmp.tmp
+rm {output}_draw*.Cmp.tmp
+rm {output}_draw**.Cmp.tmp
+rm {output}_draw***.Cmp.tmp
+rm {output}_draw****.Cmp.tmp
+
 
 #Removing sample files
 rm *.sample
