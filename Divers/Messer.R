@@ -2,8 +2,10 @@
 #Measurement error checking
 ##########################
 #Checking the measurement error following Cooper & Purvis 2009 method (spread) or Yezerinac et al 1992 (variance)
-#v.2
+#v.2.1
 #Update: Cooper & Purvis and Yezerinac method allowed
+#Update: Specimens with missing data are removed in the FUN.transform.table function
+#Update: TO DO: CHECK THE YEZERINAC METHOD CAREFULLY!
 ##########################
 #SYNTAX :
 #<data> a data.frame object containing the data
@@ -29,6 +31,9 @@
 
 Messer<-function(data, format, variable, error=5, method='both')
 {
+
+#Bugged version
+	warning('\nVERSION IN DEVELOPEMENT:\nThe variance method does not work properly')
 
 #INPUT
 
@@ -95,22 +100,64 @@ Messer<-function(data, format, variable, error=5, method='both')
 		#Column format required for method spread
 		if(method=='spread') {
 			if(format=='column') {
-				transformed.data<-data[c(var),]
+				trans.data<-data[c(var),]
+
+				#NA removale
+				nas<-which(is.na(trans.data[,3]))
+				if(length(nas) != 0) {
+					transformed.data<-data.frame(trans.data[-nas,1], trans.data[-nas,2], trans.data[-nas,3])
+					names(transformed.data)<-names(trans.data)
+					warning(length(nas),' NAs found and removed')
+				} else {
+					transformed.data<-trans.data
+				}
+
 			} else {
 
 				#transform to column format
-				transformed.data<-data.frame('ID'=data[,1], 'Variable'=rep(variable, nrow(data)), 'Measurements'=data[,var])
+				trans.data<-data.frame('ID'=data[,1], 'Variable'=rep(variable, nrow(data)), 'Measurements'=data[,var])
+			
+				#NA removale
+				nas<-which(is.na(trans.data[,3]))
+				if(length(nas) != 0) {
+					transformed.data<-data.frame(trans.data[-nas,1], trans.data[-nas,2], trans.data[-nas,3])
+					names(transformed.data)<-names(trans.data)
+					warning(length(nas),' NAs found and removed')
+				} else {
+					transformed.data<-trans.data
+				}
 			}
 		
 		#method == 'variance'
 		} else {
 			if(format=='row') {
-				transformed.data<-data[,c(1, var)]
+				trans.data<-data[,c(1, var)]
+
+				#NA removale
+				nas<-which(is.na(trans.data[,2]))
+				if(length(nas) != 0) {
+					transformed.data<-data.frame(trans.data[-nas,1], trans.data[-nas,2])
+					names(transformed.data)<-names(trans.data)
+					warning(length(nas),' NAs found and removed')
+				} else {
+					transformed.data<-trans.data
+				}
+
 			} else {
 
 				#transform to row format
-				transformed.data<-data.frame('ID'=data[c(var),1], variable=data[c(var),3])
-				names(transformed.data)[2]<-variable
+				trans.data<-data.frame('ID'=data[c(var),1], variable=data[c(var),3])
+				names(trans.data)[2]<-variable
+
+				#NA removale
+				nas<-which(is.na(trans.data[,2]))
+				if(length(nas) != 0) {
+					transformed.data<-data.frame(trans.data[-nas,1], trans.data[-nas,2])
+					names(transformed.data)<-names(trans.data)
+					warning(length(nas),' NAs found and removed')
+				} else {
+					transformed.data<-trans.data
+				}
 			}
 		}
 
@@ -122,7 +169,7 @@ Messer<-function(data, format, variable, error=5, method='both')
 	FUN.method.spread<-function(transformed.data) {
 
 		#Input
-		specimens<-levels(transformed.data[,1])
+		specimens<-levels(as.factor(as.character(transformed.data[,1])))
 		n.specimens<-length(specimens)
 
 		#Measure the median for each specimen
@@ -140,25 +187,29 @@ Messer<-function(data, format, variable, error=5, method='both')
 		#Measure the spread for each specimen
 		spec.spread<-NULL
 		for(n in 1:n.specimens){
-			measurements<-transformed.data[c(grep(specimens[n], transformed.data[,1])),3]
 
-			#remove eventual NAs
-			if(any(is.na(measurements))) {
-				measurements<-measurements[-which(is.na(measurements))]
+			if(spec.coeff[n] == 0) {
+
+				#Spread = 0 if coefficient of variation = 0
+				spec.spread[n]<-0
+
+			} else {
+
+				measurements<-transformed.data[c(grep(specimens[n], transformed.data[,1])),3]
+
+				#sorted list of observations (i(1)<i(2)<...<i(n))
+				measurements<-sort(measurements)
+				i.measurements<-length(measurements)
+
+				#Calculate the pairwise differences as diff(1)=|i(1)-i(2)|, diff(2)=|i(2)-i(3)|, diff(n-1)=|i(n-1)-i(n)|
+				meas.diff<-NULL
+				for (i in 1:(i.measurements-1)){
+					meas.diff[i]<-abs(measurements[1+(i-1)]-measurements[1+i])
+				}
+
+				#calculate the spread as ((diff(1) + diff(2) + .. + diff(n-2)) / diff(n-1)) * 100
+				spec.spread[n]<-( sum(meas.diff[-length(meas.diff)]) / abs(measurements[1]-measurements[i.measurements]))*100
 			}
-
-			#sorted list of observations (i(1)<i(2)<...<i(n))
-			measurements<-sort(measurements)
-			i.measurements<-length(measurements)
-
-			#Calculate the pairwise differences as diff(1)=|i(1)-i(2)|, diff(2)=|i(2)-i(3)|, diff(n-1)=|i(n-1)-i(n)|
-			meas.diff<-NULL
-			for (i in 1:(i.measurements-1)){
-				meas.diff[i]<-abs(measurements[1+(i-1)]-measurements[1+i])
-			}
-
-			#calculate the spread as ((diff(1) + diff(2) + .. + diff(n-2)) / diff(n-1)) * 100
-			spec.spread[n]<-( sum(meas.diff[-length(meas.diff)]) / abs(measurements[1]-measurements[i.measurements]))*100
 		}
 
 		#Return the results
@@ -171,7 +222,7 @@ Messer<-function(data, format, variable, error=5, method='both')
 	FUN.method.variance<-function(transformed.data){
 		
 		#Input
-		specimens<-levels(transformed.data[,1])
+		specimens<-levels(as.factor(as.character(transformed.data[,1])))
 		n.specimens<-length(specimens)
 		observations<-length(transformed.data[,1])
 
@@ -179,10 +230,6 @@ Messer<-function(data, format, variable, error=5, method='both')
 		n.measurements<-NULL
 		for (n in 1:n.specimens) {
 			n.measurements[n]<-length(grep(specimens[n], transformed.data[,1]))
-		}
-
-		if(length(levels(as.factor(n.measurements))) != 1){
-			warning('The measurements per specimens varies. \nThe Sum squared among is approximated by using:\nmean of (mean squared within - mean squared among) / number of measures per specimen.')
 		}
 
 		#aov model
@@ -194,7 +241,13 @@ Messer<-function(data, format, variable, error=5, method='both')
 
 		#Sum squared
 		SS.within<-model[[1]][2,2]
-		SS.among<-mean((MS.among-MS.within)/n.measurements) #Sokal and Rohlf 1981
+
+		if(length(levels(as.factor(n.measurements))) != 1){
+			SS.among<-as.numeric(names(which.max(table(((MS.among-MS.within)/n.measurements))))) 
+			warning('The measurements per specimens varies. \nThe measurement error (method=variance) is approximated by using the mode of the variation among groups:\n(mode squared within - mode squared among) / number of measures per specimen.\nThe results are only an approximation and are statistically INCORRECT.')
+		} else {
+			SS.among<-((MS.among-MS.within)/n.measurements[1]) #Sokal and Rohlf 1981
+		}
 
 		#Calculating the variable error
 		var.error<-SS.within/(SS.within + SS.among)*100 #Yezerinac et al 1992
