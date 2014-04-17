@@ -9,12 +9,13 @@
 #<number of random draws> number of random draws for the comparison
 #<output> a chain name for the output
 ##########################
-#version: 0.4
+#version: 0.5
 #Update: improved output format
 #Update: correction on the random tree selection from the ref tree: if the ref tree is unique, no sample is performed any more.
 #Update: cleaning improved (remove the files from the concern chain only)
+#Update: temporary results are now stored in a temporary folder
 #----
-#guillert(at)tcd.ie - 16/04/2014
+#guillert(at)tcd.ie - 17/04/2014
 ##########################
 #Requirements:
 #-R 3.x
@@ -35,10 +36,13 @@ output=$5
 
 #RANDOM DRAWS LIST
 
+#Creates the temporary output folder
+mkdir ${output}_tmp
+
 #Make the nexus file header
 header=$species
 let "header += 5"
-head -$header $REFtreeset > HEADER_${output}.Tree.tmp
+head -$header $REFtreeset > ${output}_tmp/HEADER_${output}.Tree.tmp
 
 #Make the random draws in both list of trees
 REFntrees=$(grep 'TREE\|Tree\|tree' $REFtreeset | grep '=\[\|=[[:space:]]\[' | wc -l)
@@ -53,6 +57,7 @@ echo "if($REFntrees < $draws) {
         INPrep=FALSE }    
     write(sample(seq(1:$REFntrees), $draws, replace=REFrep), file='REFtreeset.sample', ncolumns=1)
     write(sample(seq(1:$INPntrees), $draws, replace=INPrep), file='INPtreeset.sample', ncolumns=1) " | R --no-save
+mv *.sample ${output}_tmp/
 
 #TREE COMPARISONS
 
@@ -60,53 +65,37 @@ echo "if($REFntrees < $draws) {
 for n in $(seq 1 $draws)
 do
     #Creates the ref tree file for one draw
-    cp HEADER_${output}.Tree.tmp REFtreeset_tree${n}.Tree.tmp
-    REFrand=$(sed -n ''"${n}"'p' REFtreeset.sample)
+    cp ${output}_tmp/HEADER_${output}.Tree.tmp ${output}_tmp/REFtreeset_tree${n}.Tree.tmp
+    REFrand=$(sed -n ''"${n}"'p' ${output}_tmp/REFtreeset.sample)
     let "REFrand += $header"
-    sed -n ''"$REFrand"'p' $REFtreeset >> REFtreeset_tree${n}.Tree.tmp
-    echo 'end;' >> REFtreeset_tree${n}.Tree.tmp
+    sed -n ''"$REFrand"'p' $REFtreeset >> ${output}_tmp/REFtreeset_tree${n}.Tree.tmp
+    echo 'end;' >> ${output}_tmp/REFtreeset_tree${n}.Tree.tmp
 
     #Creates the input tree file for one draw
-    cp HEADER_${output}.Tree.tmp INPtreeset_tree${n}.Tree.tmp
-    INPrand=$(sed -n ''"${n}"'p' INPtreeset.sample)
+    cp ${output}_tmp/HEADER_${output}.Tree.tmp ${output}_tmp/INPtreeset_tree${n}.Tree.tmp
+    INPrand=$(sed -n ''"${n}"'p' ${output}_tmp/INPtreeset.sample)
     let "INPrand += $header"
-    sed -n ''"$INPrand"'p' $INPtreeset >> INPtreeset_tree${n}.Tree.tmp
-    echo 'end;' >> INPtreeset_tree${n}.Tree.tmp
+    sed -n ''"$INPrand"'p' $INPtreeset >> ${output}_tmp/INPtreeset_tree${n}.Tree.tmp
+    echo 'end;' >> ${output}_tmp/INPtreeset_tree${n}.Tree.tmp
 
     #Make the comparison using the TreeCmp java script on all rooted metrics
-    java -jar TreeCmp/bin/TreeCmp.jar -r REFtreeset_tree${n}.Tree.tmp -d mc rc ns tt -i  INPtreeset_tree${n}.Tree.tmp -o ${output}_draw${n}.Cmp.tmp
+    java -jar TreeCmp/bin/TreeCmp.jar -r ${output}_tmp/REFtreeset_tree${n}.Tree.tmp -d mc rc ns tt -i  ${output}_tmp/INPtreeset_tree${n}.Tree.tmp -o ${output}_tmp/${output}_draw${n}.Cmp.tmp
 done
-
-#Removing the extra trees
-rm REFtreeset_tree*.Tree.tmp
-rm REFtreeset_tree**.Tree.tmp
-rm REFtreeset_tree***.Tree.tmp
-rm REFtreeset_tree****.Tree.tmp
-rm INPtreeset_tree*.Tree.tmp
-rm INPtreeset_tree**.Tree.tmp
-rm INPtreeset_tree***.Tree.tmp
-rm INPtreeset_tree****.Tree.tmp
 
 #SUMMARIZING THE COMPARISONS
 
 #Comparison header
-sed -n '1p' ${output}_draw1.Cmp.tmp | sed $'s/Tree/Ref.trees\t\Input.trees/g' > ${output}.Cmp
+sed -n '1p' ${output}_tmp/${output}_draw1.Cmp.tmp | sed $'s/Tree/Ref.trees\t\Input.trees/g' > ${output}.Cmp
 
 #Add the values from each comparison
 for n in $(seq 1 $draws)
 do
-    REFrand=$(sed -n ''"${n}"'p' REFtreeset.sample)
-    INPrand=$(sed -n ''"${n}"'p' INPtreeset.sample)
-    sed -n '2p' ${output}_draw${n}.Cmp.tmp | sed 's/^./'"$REFrand"'@'"$INPrand"'/' | sed $'s/@/\t/' >> ${output}.Cmp
+    REFrand=$(sed -n ''"${n}"'p'  ${output}_tmp/REFtreeset.sample)
+    INPrand=$(sed -n ''"${n}"'p'  ${output}_tmp/INPtreeset.sample)
+    sed -n '2p' ${output}_tmp/${output}_draw${n}.Cmp.tmp | sed 's/^./'"$REFrand"'@'"$INPrand"'/' | sed $'s/@/\t/' >> ${output}.Cmp
 done
 
-#Removing extra comparisons
-rm {output}_draw*.Cmp.tmp
-rm {output}_draw**.Cmp.tmp
-rm {output}_draw***.Cmp.tmp
-rm {output}_draw****.Cmp.tmp
+#Removing the temporary folder
+rm -R ${output}_tmp/
 
-
-#Removing sample files
-rm *.sample
 #end
