@@ -5,7 +5,6 @@
 #v.2.1
 #Update: Cooper & Purvis and Yezerinac method allowed
 #Update: Specimens with missing data are removed in the FUN.transform.table function
-#Update: TO DO: CHECK THE YEZERINAC METHOD CAREFULLY!
 ##########################
 #SYNTAX :
 #<data> a data.frame object containing the data
@@ -24,16 +23,13 @@
 #<method> which method to use: can be 'spread' (Cooper & Purvis 2009) or 'variance' (Yezerinac et al 1992) or 'both' (default='both')
 ##########################
 #----
-#guillert(at)tcd.ie - 14/04/2014
+#guillert(at)tcd.ie - 17/04/2014
 ##########################
 #Requirements:
 #-R 3
 
 Messer<-function(data, format, variable, error=5, method='both')
 {
-
-#Bugged version
-	warning('\nVERSION IN DEVELOPEMENT:\nThe variance method does not work properly')
 
 #INPUT
 
