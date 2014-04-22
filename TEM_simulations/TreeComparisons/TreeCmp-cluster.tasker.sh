@@ -3,13 +3,14 @@
 ##########################
 #SYNTAX: sh TreeCmp-cluster.tasker <from> <to> <treestype>
 #with:
-#<from> a nexus file with the reference trees
-#<to> a nexus file with the trees to compare to the reference tree
-#<treestype> number of species per trees
+#<from> start chain
+#<to> end chain
+#<treestype> treesets type (fossil or living)
 ##########################
-#version: 0.1
+#version: 0.2
 #----
-#guillert(at)tcd.ie - 17/04/2014
+#guillert(at)tcd.ie - 22/04/2014
+#Update: treestype allows to specify fossil or living treesets.
 ##########################
 #Requirements:
 #-TEM_TreeCmp.sh script
@@ -54,24 +55,24 @@ rm  TreeCmp_Chain${n}.tmp
 
 #done
 
-#Modified for pruned trees. Use prefix folder '_treesets_living/fossil' or '_treesets'.
+#Modified for pruned trees. Use prefix folder '_treesets_${treestype}/fossil' or '_treesets'.
 #Modified for pruned trees. Use prefix file '..treesets' or '.treesets'
 #Modified for pruned trees. Use 'pruned-M${prefix_folder}_L00F00C00..treeset' or 'M${prefix_folder}_L00F00C00.treeset'
 
 #for n in $(seq 20  29)
 #do
 
-    echo "for folder in Chain${n}_treesets_living
+    echo "for folder in Chain${n}_treesets_${treestype}
 do
-    prefix_folder=\$(basename \$folder _treesets_living)
+    prefix_folder=\$(basename \$folder _treesets_${treestype})
     echo \$prefix_folder
 
     #Get the right folder
-    for file in \${folder}/*.living
+    for file in \${folder}/*.${treestype}
     do
         #In the right folder get the right trees
-        prefix_file=\$(basename \$file .living)
-        sh TEM_TreeCmp.sh \${prefix_folder}_treesets_living/pruned-M\${prefix_folder}_L00F00C00.living \${file} 51 1000 \${prefix_file} #or \${prefix_folder}.True_tree.tre.nex M\${prefix_folder}_L00F00C00.treeset
+        prefix_file=\$(basename \$file .${treestype})
+        sh TEM_TreeCmp.sh \${prefix_folder}_treesets_${treestype}/pruned-M\${prefix_folder}_L00F00C00.${treestype} \${file} 51 1000 \${prefix_file} #or \${prefix_folder}.True_tree.tre.nex M\${prefix_folder}_L00F00C00.treeset
     done
 done " > TreeCmp_Chain${n}.task
 
