@@ -2,9 +2,10 @@
 #Chain TreeCmp Read
 ##########################
 #Combine the data of .Cmp files from TEM_TreeCmp.sh into R by chains
-#v.0.2
+#v.0.3
 #Update: improved input format
 #Update: output is now a 'TreeCmp' list class
+#Update: in FUN.TreeCmp.Read, read.table function as been wrapped in a try function.
 ##########################
 #SYNTAX :
 #<chain> the chain name to read in
@@ -14,7 +15,7 @@
 #<header> whether to be verbose or not (default=FALSE) - useful for large data sets handling
 ##########################
 #----
-#guillert(at)tcd.ie - 20/03/2014
+#guillert(at)tcd.ie - 25/04/2014
 ##########################
 #Requirements:
 #-R 3
@@ -84,7 +85,7 @@ FUN.TreeCmp.Read<-function(chain, suffix, sep, header, verbose) {
 
             #Building the list
             for (i in 1:length(table.list)){
-                combined.list[[j]]<-rbind(combined.list[[j]], read.table(chain.list[table.list[i]], header=header))
+                try(combined.list[[j]]<-rbind(combined.list[[j]], read.table(chain.list[table.list[i]], header=header)))
             }
 
             #Be verbose
