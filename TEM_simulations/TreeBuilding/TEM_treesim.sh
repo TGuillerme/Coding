@@ -2,7 +2,7 @@
 #Total Evidence Method simulations
 ##########################
 #SYNTAX:
-#sh TEMsim [<Living Species> <Input Matrix>] <Molecular characters> <Morphological characters> <Evolutionary model> <Method> <Replicates> <Number of simulations> <Chain name> <Input>
+#sh TEM_treesim.sh [<Living Species> <Input Matrix>] <Molecular characters> <Morphological characters> <Evolutionary model> <Method> <Replicates> <Number of simulations> <Chain name> <Input>
 #with:
 #<Living Species> being any entire number of living species to put into the matrices.
 #<Input matrix> an optional matrix in phylip format to split. The first species should be the outgroup.

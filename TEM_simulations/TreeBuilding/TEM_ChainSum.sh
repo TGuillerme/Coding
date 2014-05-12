@@ -2,7 +2,7 @@
 #Building the tree sets for analysing the TEM simulation results
 ##########################
 #SYNTAX :
-#sh MB_ChainSum_v0.1.sh <Number of species> <Burnin> <Chain name>
+#sh TEM_ChainSum.sh <Number of species> <Burnin> <Chain name>
 #<Number of species> the number of species per tree
 #<Burnin> the proportion of first trees to ignore as a burnin
 #<Chain Name> creates a folder named after the chain name to store the results

@@ -2,7 +2,7 @@
 #Total Evidence Method simulations
 ##########################
 #SYNTAX:
-#sh TEMsim <Living Species> <Molecular characters> <Morphological characters> <Chain name>
+#sh TEM_cluster-tasker.sh <Living Species> <Molecular characters> <Morphological characters> <Chain name>
 #with:
 #<Living Species> being any entire number of living species to put into the matrices
 #<Molecular characters> being any entire number of molecular characters to put into the matrices
