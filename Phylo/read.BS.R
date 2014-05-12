@@ -2,19 +2,21 @@
 #Bootstrap read
 ##########################
 #Read (and plots) the distribution of bootstraps of multiple sets of trees
-#v.0.1
+#v.1
 #To do: make the function run for trees in R environment
 ##########################
 #SYNTAX :
 #<phy> can be either a phylo or multiPhylo object or a chain name of nexus or newick tree out of R environment.
 #<plot> whether to plot the results or not (default = TRUE).
 #<save> whether to save the plot or not (default = FALSE).
+#<rm.na> whether to remove the NA (splits with no support value, e.g. the tree root) (default=TRUE)
 ##########################
 #----
-#guillert(at)tcd.ie - 28/04/2014
+#guillert(at)tcd.ie - 12/05/2014
 ##########################
 #Requirements:
 #-R 3
+#-R package 'ape'
 #########################
 
 
@@ -22,10 +24,7 @@
 
 
 
-read.BS<-function(phy,plot=TRUE,save=FALSE){
-
-	#IN DEVELOPEMENT USE FIRST COMMIT
-	stop('IN DEVELOPEMENT USE FIRST COMMIT')
+read.BS<-function(phy, plot=TRUE, save=FALSE, rm.na=TRUE){
 
 	#DATA INPUT
 
@@ -39,7 +38,7 @@ read.BS<-function(phy,plot=TRUE,save=FALSE){
 			pattern.tree <- FALSE
 		} else {
 			if(class(phy) != "character"){
-				stop("phy bad")
+				stop("Input must be a 'phylo' or 'multiPhylo' object or a pattern of filename(s) containing 'phylo' or 'multiPhylo' object(s).")
 			} else {
 				pattern.tree <- TRUE
 			}
@@ -49,8 +48,29 @@ read.BS<-function(phy,plot=TRUE,save=FALSE){
     	pattern.list<-list.files(pattern=phy)
 	}
 
-	#Read pattern and check if tree is nexus/newick and phylo/multiphylo
+	#Import the trees if pattern.tree==TRUE
+    if(pattern.tree == TRUE) {
 
+        #Set the number of trees
+        if(length(pattern.list) == 1){
+            single.tree <- TRUE
+        } else {
+            if(length(pattern.list) == 0) {
+                stop('Tree pattern not found')
+            } else {
+                single.tree <- FALSE
+            }
+        }
+
+        #Select the tree format
+        tree.format<-readChar(pattern.list[1],10)
+        tree.format<-grep('#NEXUS', tree.format, ignore.case=TRUE)
+        if(length(tree.format) == 0){
+            tree.nexus<-FALSE
+        } else {
+            tree.nexus<-TRUE
+        }
+    }
 
 
     #plot
@@ -63,30 +83,109 @@ read.BS<-function(phy,plot=TRUE,save=FALSE){
         stop('Save should be TRUE or FALSE')
     }
 
+    #rm.na
+    if(class(rm.na) != 'logical'){
+        stop('Save should be TRUE or FALSE')
+    }
+
 	#FUNCTION
 
-	FUN.read.BS<-function(phy) {
-		#phy=pattern
-		names<-list.files(pattern=pattern)
-		BS.list<-as.list(names)
-		tree<-read.tree(list.files(pattern=pattern)[1])
-		for (i in 1:length(BS.list)){BS.list[[i]]<-rep(NA,(tree[[2]]))}
-		names(BS.list)<-names
+    #Reading phylogenies from a given pattern
+    FUN.read.pat.tree<-function(pattern.list, single.tree, tree.nexus) {
+        tree.names<-pattern.list
+        pat.tree<-NULL
 
-		for (f in 1:length(list.files(pattern=pattern))){
-			trees<-read.tree(list.files(pattern=pattern)[f])
-				for (j in 1: tree[[2]]){
-					BS.list[[f]][j]<-as.numeric(trees[[5]])[j]}
-			}
-	}
+        if(single.tree == TRUE) {
+
+            #phylo object
+            if(tree.nexus == FALSE) {
+                pat.tree<-read.tree(pattern.list, tree.names=tree.names)
+            } else {
+                pat.tree<-read.nexus(pattern.list, tree.names=tree.names)
+            }
+
+        } else {
+
+            #multiPhylo object
+            pat.tree<-as.list(tree.names)
+
+            for (f in 1:length(tree.names)) {
+                if(tree.nexus == FALSE) {
+                    pat.tree[[f]]<-read.tree(pattern.list[f])
+                } else {
+                    pat.tree[[f]]<-read.nexus(pattern.list[f])
+                }
+                names(pat.tree)<-tree.names
+                class(pat.tree)<-'multiPhylo'
+            }
+        }
+        return(pat.tree)
+    }
+
+	FUN.read.BS<-function(phy, single.tree, rm.na) {
+		#phy=pattern
+
+        #add names to multiPhylo object if none provided
+        if(single.tree == FALSE) {
+            if(length(names(phy)) == 0) {
+                tree.names<-seq(1:length(phy))
+                names(phy)<-tree.names
+            }
+        
+            #Create the BS.list
+            BS.list<-as.list(names(phy))
+            for (i in 1:length(BS.list)) {
+                BS.list[[i]]<-NA
+            }
+            names(BS.list)<-names(phy)
+        
+            #Extract the Bootstraps
+            for(i in 1:length(phy)) {
+
+                if(length(phy[[i]]) == 4) {
+                    warning('Support values must in in fifth position of the phylo/multiPhylo object (default)')
+                    stop('No support values found in the given tree')
+                }
+
+                if(rm.na == FALSE) {
+                    BS.list[[i]]<-as.numeric(phy[[i]][[5]])
+                } else {
+                    BS.list[[i]]<-as.numeric(phy[[i]][[5]])[-c(which(is.na(as.numeric(phy[[i]][[5]]))))]
+                }
+            }
+
+        } else {
+            #only one tree
+            if(length(phy) == 4) {
+                warning('Support values must in in fifth position of the phylo/multiPhylo object (default)')
+                stop('No support values found in the given tree')
+            }
+
+            if(rm.na == FALSE) {
+                BS.list<-as.numeric(phy[[5]])
+            } else {
+                BS.list<-as.numeric(phy[[5]])[-c(which(is.na(as.numeric(phy[[5]]))))]
+            }
+        }
+
+        return(BS.list)
+    }
 
 	#BOOSTRAP READ
 
-	BS.list<-FUN.read.BS(phy)
+    #Load the trees if necessary
+    if(pattern.tree == TRUE) {
+        phy<-FUN.read.pat.tree(pattern.list, single.tree, tree.nexus)
+    }
 
+    #Read the bootstrap values from the tree(s)
+	BS.list<-FUN.read.BS(phy, single.tree, rm.na)
+
+    #plot
 	if(plot==TRUE){
 		boxplot(BS.list,las=2,ylab="Boostrap")}
 
+    #save
 	if(save==TRUE){
 		pdf("Bootstraps.pdf")
 		boxplot(BS.list,las=2,ylab="Boostrap")
@@ -97,74 +196,5 @@ read.BS<-function(phy,plot=TRUE,save=FALSE){
 	BSlist<-list(Boostraps=unlist(BS.list, use.names=FALSE), Details=BS.list)	
 	return(BSlist)
 
-#Draft
-
-
-	if(class(data) == 'character') {
-        data.is.chain<-TRUE
-    } else {
-        if(class(data) != 'list') {
-            stop('The data input is not a list')
-        } else {
-            data.is.chain<-FALSE
-        }
-    }
-
-    #If data is a chain name, load the data from the .csv files
-    if(data.is.chain == TRUE) {
-        chain.list<-list.files(pattern=data)
-        data.tmp<-NULL
-        
-        #Load the csv files
-        for (i in 1:length(list.files(pattern=data))) {
-            data.tmp[[i]]<-read.csv(list.files(pattern=data)[i], row.names=1)
-        }
-
-        #Rename the csv files list
-        names(data.tmp)<-unlist(strsplit(chain.list, split=paste('_',data,'.csv',sep='')))
-        data<-data.tmp
-        data.tmp<-NULL
-
-    }
-
-
 }
 #End
-
-
-
-
-
-
-
-
-
-
-
-
-	    if(class(data) == 'character') {
-        data.is.chain<-TRUE
-    } else {
-        if(class(data) != 'list') {
-            stop('The data input is not a list')
-        } else {
-            data.is.chain<-FALSE
-        }
-    }
-
-    #If data is a chain name, load the data from the .csv files
-    if(data.is.chain == TRUE) {
-        chain.list<-list.files(pattern=data)
-        data.tmp<-NULL
-        
-        #Load the csv files
-        for (i in 1:length(list.files(pattern=data))) {
-            data.tmp[[i]]<-read.csv(list.files(pattern=data)[i], row.names=1)
-        }
-
-        #Rename the csv files list
-        names(data.tmp)<-unlist(strsplit(chain.list, split=paste('_',data,'.csv',sep='')))
-        data<-data.tmp
-        data.tmp<-NULL
-
-    }
