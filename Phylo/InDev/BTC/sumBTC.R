@@ -22,6 +22,8 @@
 
 sumBTC<-function(data, metric.number, probs=c(95, 75, 50), plot=TRUE, save.details=FALSE){
 
+warning('In developement')
+
 #HEADER
 
 #Loading the libraries

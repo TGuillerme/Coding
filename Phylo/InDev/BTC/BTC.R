@@ -24,6 +24,8 @@
 
 BTC<-function(tree_sets, metrics, sample_size=1000, opt_reference, opt_output, verbose=TRUE){
 
+warning('In developement')
+
 #HEADER
 
 #Loading the libraries
