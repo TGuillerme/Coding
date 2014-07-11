@@ -4,9 +4,13 @@
 #Measure the absolute distance between two trees based on their shape
 #v1.0
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> FETCH_HEAD
+=======
+#Dummy update: Adam want's to know the truth
+>>>>>>> parent of 2cf3386... Adam is no longer the truth
 #----
 #guillert(at)tcd.ie 25/07/2013
 ##########################
@@ -80,8 +84,13 @@ warning('In developement')
 	return(output)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	
+=======
+	#Dummy
+	Truth<-"adam"
+>>>>>>> parent of 2cf3386... Adam is no longer the truth
 
 >>>>>>> FETCH_HEAD
 }
