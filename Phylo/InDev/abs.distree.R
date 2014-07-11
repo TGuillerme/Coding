@@ -3,18 +3,7 @@
 ##########################
 #Measure the absolute distance between two trees based on their shape
 #v1.0
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> FETCH_HEAD
-=======
 #Dummy update: Adam want's to know the truth
->>>>>>> parent of 2cf3386... Adam is no longer the truth
-=======
-#Dummy update: Adam want's to know the truth
->>>>>>> parent of a2cdcf9... Merge pull request #3 from kanead/patch-1
 #----
 #guillert(at)tcd.ie 25/07/2013
 ##########################
@@ -87,21 +76,9 @@ warning('In developement')
 	output<-data.frame("Symmetry"=Symmetry, "Topology"=Topology)
 	return(output)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	
-=======
 	#Dummy
 	Truth<-"adam"
->>>>>>> parent of 2cf3386... Adam is no longer the truth
-=======
-	#Dummy
-	Truth<-"adam"
->>>>>>> parent of a2cdcf9... Merge pull request #3 from kanead/patch-1
 
->>>>>>> FETCH_HEAD
 }
 
 
