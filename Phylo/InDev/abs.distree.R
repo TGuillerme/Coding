@@ -3,6 +3,10 @@
 ##########################
 #Measure the absolute distance between two trees based on their shape
 #v1.0
+<<<<<<< HEAD
+=======
+
+>>>>>>> FETCH_HEAD
 #----
 #guillert(at)tcd.ie 25/07/2013
 ##########################
@@ -75,6 +79,11 @@ warning('In developement')
 	output<-data.frame("Symmetry"=Symmetry, "Topology"=Topology)
 	return(output)
 
+<<<<<<< HEAD
+=======
+	
+
+>>>>>>> FETCH_HEAD
 }
 
 
