@@ -3,7 +3,6 @@
 ##########################
 #Measure the absolute distance between two trees based on their shape
 #v1.0
-#Dummy update: Adam want's to know the truth
 #----
 #guillert(at)tcd.ie 25/07/2013
 ##########################
@@ -75,9 +74,6 @@ warning('In developement')
 	#Output
 	output<-data.frame("Symmetry"=Symmetry, "Topology"=Topology)
 	return(output)
-
-	#Dummy
-	Truth<-"adam"
 
 }
 
