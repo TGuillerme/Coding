@@ -1,110 +1,316 @@
 ##########################
-#Builds a Birth-Death tree with the same number of extant and extinct species
+#Builds a Birth-Death tree with a given number of extant and extinct species
 ##########################
-#Building a Birth-Death tree by rejection sampling process using tree.bd algorithm from diversitree package (FitzJohn, 2013) with a maximum living taxa stop and allows a fixed number of associated fossils. The lambda (speciation rate) and mu (extinction rate) parameters are sampeled from a uniform distribution with lambda>mu.
-#Optional arguments are:
-#-error (default=0) which is a possible error margin for the generated number of extinct species to match with the given extinct number
-#-rename (default=TRUE) which is the possibility of renaming the tips with three digits (from "sp0000" and "ex0000" to "sp9999" and "ex9999")
-#v1.0
+#Building a Birth-Death tree by rejection sampling process using tree.bd code from diversitree package (FitzJohn, 2013) with a maximum living taxa stop and allows a fixed number of associated fossils.
+#v.2
+#Update: redesigned the rejection sampling algorithm
+#Update: added outgroup option
+#Update: added a verbose option
+#Update: user can now specify birth-death parameters
+##########################
+#SYNTAX:
+#<extant> the number of extant species
+#<extinct> the number of extinct species
+#<error> an error or tolerance for variation in the number of fossil (default=0).
+#<birth.death> the birth death parameters. If not specified, birth death parameters are sampled from a random distribution with birth > death (greatly speeds up the function)
+#<outgroup> whether to add an extra outgroup or not. The outgroup will be an extant taxa (default=FALSE)
+#<rename> changing the taxa names to contain the same number of digit (default=FALSE)
+#<verbose> whether to be verbose or not (default=FALSE). Verbose can also be 'system' to print the messages at a system level
+##########################
 #----
-#Thomas Guillerme - guillert(at)tcd.ie - 12/09/2013
+#guillert(at)tcd.ie - 22/07/2014
 ##########################
+#Requirements:
+#-R 3
+#-R package 'ape'
+#-R package 'diversitree'
+#########################
 
 
-trbd.ex<-function(extant, extinct, error=0, rename=TRUE)
+
+
+trbd.ex<-function(extant, extinct, birth.death, error=0, outgroup=FALSE, rename=FALSE, verbose=FALSE)
 {
-	#Loading the packages
+#REQUIREMENTS
 	require(ape)
 	require(diversitree)
 
-	#input check
-	##Number of extant species should be numerical
+#DATA INPUT
+	#Extant
 	if(missing(extant)) {
-		stop('Extant argument should be a numerical value')} else {
-			if(class(extant) !='numeric') {
-				stop('Extant argument should be a numerical value')} else {
-					if(length(extant) !=1) {
-						stop('Extant argument should be a numerical value')}
-				}
+		stop('Extant argument should be a numerical value')
+	} else {
+		if(class(extant) !='numeric') {
+			stop('Extant argument should be a numerical value')
+		} else {
+			if(length(extant) !=1) {
+				stop('Extant argument should be a numerical value')
+			}
 		}
+	}
 		
-	##Number of extinct species should be numerical
+	#Extinct
 	if(missing(extinct)) {
-		stop('Extinct argument should be a numerical value')} else {
-			if(class(extinct) !='numeric') {
-				stop('Extinct argument should be a numerical value')} else {
-					if(length(extinct) !=1) {
-						stop('Extinct argument should be a numerical value')}
-				}
+		stop('Extinct argument should be a numerical value')
+	} else {
+		if(class(extinct) !='numeric') {
+			stop('Extinct argument should be a numerical value')
+		} else {
+			if(length(extinct) !=1) {
+				stop('Extinct argument should be a numerical value')
+			}
 		}
+	}
 
-	##error should be a probability
+	#Error
 	if(class(error) !='numeric') {
-		stop('Error argument should be a value within the interval 0-1')} else {
-			if(error >= 1.0000001) {
-				stop('Error argument should be a value within the interval 0-1')} else {
-					if(error <= -0.000001) {
-						stop('Error argument should be a value within the interval 0-1')}
-				}
+		stop('Error argument should be a value within the interval 0-1')
+	} else {
+		if(error > 1) {
+			stop('Error argument should be a value within the interval 0-1')
+		} else {
+			if(error < 0) {
+				stop('Error argument should be a value within the interval 0-1')
+			}
 		}
+	}
 
-	##Rename should be logical
+	#Birth-death
+	if(missing(birth.death)) {
+		generate.birth.death=TRUE
+	} else {
+		generate.birth.death=FALSE
+		message('Birth death parameters are fixed by the user:\nThis configuration may slow down the tree generation')
+		if(class(birth.death) != 'numeric') {
+			stop('Birth-death must be a vector of two values')
+		} else {
+			if(length(birth.death) != 2) {
+				stop('Birth-death must be a vector of two values')
+			} else {
+				if(birth.death[1] < birth.death[2]) {
+					message('Birth parameter < Death parameter:\nThis configuration may slow down the tree generation')
+				}
+			}
+		}
+	}
+
+	#Outgroup
+	if(class(outgroup) != 'logical') {
+		stop('Outgroup argument should be logical')
+	}
+
+	#Rename
 	if(class(rename) != 'logical') {
 		stop('Rename argument should be logical')
 	}
 
-	#Algorithm functions: generating a birth death tree with the 3 following conditions
-	##Setting the parameters lambda and mu
-	fun.pars<-function(x=1){
-		lambda<-runif(x)
-		mu<-runif(x,0,lambda)
+	#verbose
+	if(verbose != 'system') {
+		if(class(verbose) != 'logical') {
+			stop('Verbose argument should be logical')
+		}
+	}
+
+#FUNCTIONS
+
+	#Generating lambda and mu parameter
+	FUN.parameters<-function(){
+		lambda<-runif(1)
+		mu<-runif(1,0,lambda)
 		return(cbind(lambda, mu))}
 
-	##Building the birth death tree.
-	##Condition 1 is that the birth death process don't fail (output = 'phylo')		
-	fun1<-function(extant)
-		{pars<<-fun.pars() ; trbd.tmp<<-tree.bd(pars, max.taxa= extant, include.extinct=TRUE)
-			while (class(trbd.tmp) !='phylo')
-			{pars<<-fun.pars() ; trbd.tmp<<-tree.bd(pars, max.taxa= extant, include.extinct=TRUE)}}
+
+	#Conditions for the rejection-sampling algorithm
+
+	#Condition 1: the birth death process generates a tree (output = 'phylo')	
+	FUN.con1<-function(extant, verbose, parameters) {
+
+		if(missing(parameters)) {
+			trbd.tmp<-tree.bd(FUN.parameters(), max.taxa=extant, include.extinct=TRUE)
+		} else {
+			trbd.tmp<-tree.bd(parameters, max.taxa=extant, include.extinct=TRUE)
+		}
+
+		if(verbose==TRUE){
+			cat('.')
+		}
+		if(verbose=='system'){
+			message('.', appendLF=FALSE)
+		}
+
+
+		#Conditional loop (trbd.tmp = 'phylo')
+		while (class(trbd.tmp) !='phylo') {
+			if(missing(parameters)) {
+				trbd.tmp<-tree.bd(FUN.parameters(), max.taxa=extant, include.extinct=TRUE)
+			} else {
+				trbd.tmp<-tree.bd(parameters, max.taxa=extant, include.extinct=TRUE)
+			}
+
+			if(verbose==TRUE){
+				cat('.')
+			}
+			if(verbose=='system'){
+				message('.', appendLF=FALSE)
+			}
+
+		}
+
+		return(trbd.tmp)
+	}
 			
-	###Condition 2 is that the birth death process generates the number of extant species given in the input
-	fun2<-function(extant)
-		{fun1(extant)
-			while (length(grep('sp', trbd.tmp$tip.label)) != extant)
-			{fun1(extant)}}	
+	#Condition 2: the birth death process generates the right number of extant taxa given in the input
+	FUN.con2<-function(extant, verbose, parameters) {
+		if(missing(parameters)) {
+			trbd.tmp<-FUN.con1(extant, verbose)
+		} else {
+			trbd.tmp<-FUN.con1(extant, verbose, parameters)
+		}
 
-	###Condition 3 is that the birth death process generates at least the number of extinct species given in the input (- error)
-	fun3<-function(extant,extinct,error)
-		{fun2(extant)
-			while ((length(trbd.tmp$tip.label)-extant) < extinct-extinct*error)
-			{fun2(extant)}}
+		if(verbose==TRUE){
+			cat('.')
+		}
+		if(verbose=='system'){
+			message('.', appendLF=FALSE)
+		}
 
-	###When all the conditions are encountered, check if extinct=extant (+/- error), else randomly prune extinct species until extinct=extant (+/- error)
-	fun4<-function(extant,extinct,error){fun3(extant, extinct, error)
+
+		#Conditional loop (length living taxa in trbd.tmp == extant)
+		while (length(grep('sp', trbd.tmp$tip.label)) != extant) {
+			if(missing(parameters)) {
+				trbd.tmp<-FUN.con1(extant, verbose)
+			} else {
+				trbd.tmp<-FUN.con1(extant, verbose, parameters)
+			}
+			
+			if(verbose==TRUE){
+				cat('.')
+			}
+			if(verbose=='system'){
+				message('.', appendLF=FALSE)
+			}
+
+		}
+
+		return(trbd.tmp)
+	}	
+
+	#Condition 3: that the birth death process generates at least the number of extinct species given in the input (- error)
+	FUN.con3<-function(extant, extinct, error, verbose, parameters) {
+		if(missing(parameters)) {
+			trbd.tmp<-FUN.con2(extant, verbose)
+		} else {
+			trbd.tmp<-FUN.con2(extant, verbose, parameters)
+		}
+
+		if(verbose==TRUE){
+			cat('.')
+		}
+		if(verbose=='system'){
+			message('.', appendLF=FALSE)
+		}
+
+		#Conditional loop (length fossil taxa in trbd.tmp < fossil - error)
+		while((length(trbd.tmp$tip.label)-extant) < extinct-extinct*error) {
+			if(missing(parameters)) {
+				trbd.tmp<-FUN.con2(extant, verbose)
+			} else {
+				trbd.tmp<-FUN.con2(extant, verbose, parameters)
+			}
+
+			if(verbose==TRUE){
+				cat('.')
+			}
+			if(verbose=='system'){
+				message('.', appendLF=FALSE)
+			}
+
+		}
+
+		return(trbd.tmp)
+	}
+			
+
+	#Applying the three conditions and when all the conditions are encountered, check if extinct=extant (+/- error), else randomly prune extinct species until extinct=extant (+/- error)
+	FUN.trbd.ex<-function(extant, extinct, error, verbose, parameters){
+		if(verbose==TRUE){
+			cat('Generating a conditional birth death tree\n')
+		}
+		if(verbose=='system'){
+			message('Generating a conditional birth death tree', appendLF=TRUE)
+		}
+
+
+		#Running through the three conditions
+		if(missing(parameters)) {
+			trbd.tmp<-FUN.con3(extant, extinct, error, verbose)
+		} else {
+			trbd.tmp<-FUN.con3(extant, extinct, error, verbose, parameters)
+		}
+
+		#Remove extra fossil taxa
 		if (extinct-extinct*error <= (length(trbd.tmp$tip.label)-extant) & (length(trbd.tmp$tip.label)-extant) <= extinct+extinct*error) {
-			trbd<<-trbd.tmp} else {
-			trbd<<-drop.tip(trbd.tmp, c(trbd.tmp$tip.label[c(sample(grep('ex', trbd.tmp$tip.label), (length(grep('ex', trbd.tmp$tip.label))-extinct)))]))}}
+			trbd<-trbd.tmp
+		} else {
+			trbd<-drop.tip(trbd.tmp, c(trbd.tmp$tip.label[c(sample(grep('ex', trbd.tmp$tip.label), (length(grep('ex', trbd.tmp$tip.label))-extinct)))]))
+		}
+		
+		#Returning the tree
+		if(verbose==TRUE){
+			cat('Done\n')
+		}
+		if(verbose=='system'){
+			message('Done', appendLF=TRUE)
+		}
 
-	#Runing the tree
-	trbd.tmp<-NULL
-	trbd<-NULL
-	fun4(extant, extinct, error)
+		return(trbd)
+	}
 
-	#Renaming the labels (optional, default=TRUE)
-	if(rename==TRUE){
+	#Outgroup function
+	FUN.outgroup<-function(tree){
+		#Setting the root edge as the mean tree edge length
+	    tree$root.edge<-mean(tree$edge.length)
 
-		for (i in 1:length(trbd[[3]]))
-		if(nchar(trbd[[3]][i])==3){
-			trbd[[3]][i]<-paste(substr(trbd[[3]][i],1,2), "000", substr(trbd[[3]][i],3,nchar(trbd[[3]][i])), sep="")} else {
-			if(nchar(trbd[[3]][i])==4){
-				trbd[[3]][i]<-paste(substr(trbd[[3]][i],1,2), "00", substr(trbd[[3]][i],3,nchar(trbd[[3]][i])), sep="")} else {
-				if(nchar(trbd[[3]][i])==5){
-					trbd[[3]][i]<-paste(substr(trbd[[3]][i],1,2), "0", substr(trbd[[3]][i],3,nchar(trbd[[3]][i])), sep="")}
+	    #Generating the outgroup
+        outgroup<-list(edge=matrix(c(2,1),1,2),
+        	tip.label='sp0',
+        	edge.length=mean(tree$edge.length)+max(node.depth.edgelength(tree)),
+        	Nnode=1)
+        class(outgroup)<-'phylo'
+
+        #Combining the outgroup and the tree
+        tree<-bind.tree(tree, outgroup ,position=mean(tree$edge.length))
+        return(tree)
+	}
+
+	#Renaming function
+	FUN.rename<-function(tree){
+		for (i in 1:length(tree[[3]]))
+		if(nchar(tree[[3]][i])==3) {
+			tree[[3]][i]<-paste(substr(tree[[3]][i],1,2), "000", substr(tree[[3]][i],3,nchar(tree[[3]][i])), sep="")
+		} else {
+			if(nchar(tree[[3]][i])==4) {
+				tree[[3]][i]<-paste(substr(tree[[3]][i],1,2), "00", substr(tree[[3]][i],3,nchar(tree[[3]][i])), sep="")
+			} else {
+				if(nchar(tree[[3]][i])==5) {
+					tree[[3]][i]<-paste(substr(tree[[3]][i],1,2), "0", substr(tree[[3]][i],3,nchar(tree[[3]][i])), sep="")
 				}
-			}		
-	
+			}
+		}	
+		return(tree)
+	}
+
+#GENERATING A BIRTH DEATH TREE WITH A GIVEN NUMBER OF LIVING AND FOSSIL TAXA
+	tree<-FUN.trbd.ex(extant, extinct, error, verbose, parameters)
+
+	if(outgroup==TRUE){
+		tree<-FUN.outgroup(tree)
+	}
+
+	if(rename==TRUE){
+		tree<-FUN.rename(tree)
 	}
 
 	#Output
-	return(trbd)
+	return(tree)
 }
