@@ -28,8 +28,6 @@
 #########################
 
 
-
-
 trbd.ex<-function(extant, extinct, birth.death=NULL, error=0, outgroup=FALSE, rename=FALSE, verbose=FALSE)
 {
 #REQUIREMENTS
