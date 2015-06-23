@@ -7,9 +7,9 @@
 #with:
 #<tex> being the tex file
 #########################
-#version 0.1
+#version 0.2
 #----
-#guillert(at)tcd.ie - 18/05/2015
+#guillert(at)tcd.ie - 23/06/2015
 ##########################
 
 #Input value
@@ -68,7 +68,7 @@ else
     mv ${tex}.tmp ${tex}
 
     #correct the e.g. (1)
-    sed 's/\\cite\[e.g.\]\[\]/(e.g. \cite/g' ${tex} > ${tex}.tmp 
+    sed 's/\\cite\[e.g.\]\[\]/(e.g. \\cite/g' ${tex} > ${tex}.tmp 
 
     #rename the tex file
     mv ${tex}.tmp ${tex}
