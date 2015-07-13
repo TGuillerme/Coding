@@ -49,7 +49,7 @@ MultiDisPlot<-function(data.list, probs=c(95, 50), col="black", ylim="auto", ...
     hdr.results<-lapply(data.list, hdr, prob=probs)
 
     #Empty plot
-    plot(1,1, xlim= c(1,length(data.list)), ylim=ylim, type='n', xaxt='n',las=2)
+    plot(1,1, xlim= c(1,length(data.list)), ylim=ylim, col="white", ...)
 
     #Adding the lines
     for (j in 1:length(data.list)) {
