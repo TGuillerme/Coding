@@ -54,7 +54,7 @@ MultiDisPlot<-function(data.list, probs=c(95, 50), col="black", ylim="auto", ...
     #Adding the lines
     for (j in 1:length(data.list)) {
         temp <- hdr.results[[j]]
-        #shift=0
+        shift=0
         #border="black"
 
         for (k in 1:length(probs)) {
