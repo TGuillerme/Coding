@@ -73,6 +73,12 @@ else
     #rename the tex file
     mv ${tex}.tmp ${tex}
 
+    #change all the \citealt into \cite
+    sed 's/\\citealt/\\cite/g' ${tex} > ${tex}.tmp 
+
+    #rename the tex file
+    mv ${tex}.tmp ${tex}
+
     #Done!
     echo "Brackets not closed for examples."
     echo "Remember to add the 'vancouver.bst' file to the current directory."
