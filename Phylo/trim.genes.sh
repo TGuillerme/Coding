@@ -1,3 +1,5 @@
+#!/bin/sh
+
 ##########################
 # Script for using trimming gene alignements
 ##########################
