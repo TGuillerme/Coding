@@ -3,7 +3,7 @@
 ##########################
 # Script for using trimming gene alignements
 ##########################
-#SYNTAX: TreeCmp -i <input> -o <output> -s <start> -e <end>
+#SYNTAX: trim.genes.sh -i <input> -o <output> -s <start> -e <end>
 #with:
 #-i <input> the name of the input file
 #-o <output> the name of the output file
