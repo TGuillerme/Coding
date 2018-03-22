@@ -74,7 +74,7 @@ plot.CI <- function(x, type, CI = c(95, 50), cent.tend = mean, col.x, ...) {
                 y_vals <- c(x_summary[[point]][cis], x_summary[[point]][quantiles_n*2 - (cis-1)])
 
                 ## Plotting the line
-                graphics::lines(x = rep((point + dots$shift), 2), y = y_vals, lty = (quantiles_n - cis + 1), lwd = cis * dots$lwd, col = col.x[[1]])
+                graphics::lines(x = rep((point + dots$shift), 2), y = y_vals, lty = (quantiles_n - cis + 1), lwd = cis * dots$lwd, col = col.x[[point]])
 
             }
         }
