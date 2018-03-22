@@ -48,7 +48,7 @@ plot.CI <- function(x, type, CI = c(95, 50), cent.tend = mean, col.x, ...) {
     if(is.null(dots$point.col)) dots$point.col <- col.x
     if(is.null(dots$width)) dots$width <- 0.5
     if(is.null(dots$shift)) dots$shift <- 0
-    if(is.null(dots$shift)) dots$lwd <- 1
+    if(is.null(dots$shift)) dots$lwd <- 1.5
 
     ## Plot polygons
     if(type == "polygon") {
