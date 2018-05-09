@@ -9,7 +9,7 @@
 #<output format> the new output format (either nexus or newick)
 ##########################
 #version: 0.1
-TEM_NexToNew_version="TEM_NexToNew.sh v0.1"
+nex2new_version="nex2new.sh v0.1"
 #----
 #guillert(at)tcd.ie - 15/08/2014
 ##########################
