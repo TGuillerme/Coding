@@ -10,7 +10,18 @@
 #' @param ... Optional arguments to be handled by \code{\link[graphics]{polygon}, \code{\link[graphics]{lines} or \code{\link[graphics]{points} 
 #' 
 #' @examples
+#' ## A list of vectors
+#' dummy <- replicate(10, rnorm(100), simplify = FALSE)
 #'
+#' ## The empty plot
+#' plot(NULL, xlim = c(0,10), ylim = range(unlist(dummy)))
+#' 
+#' ## Adding the default CI lines
+#' plot.CI(dummy, type = "line")
+#' 
+#' ## Adding some funny looking polygons
+#' plot.CI(dummy, type = "polygon", cent.tend = max, CI = c(95, 75, 50, 10, 5), col.x = rainbow(10))
+#' 
 #' @seealso
 #' 
 #' @author Thomas Guillerme
@@ -48,7 +59,7 @@ plot.CI <- function(x, type, CI = c(95, 50), cent.tend = mean, col.x, ...) {
     if(is.null(dots$point.col)) dots$point.col <- col.x
     if(is.null(dots$width)) dots$width <- 0.5
     if(is.null(dots$shift)) dots$shift <- 0
-    if(is.null(dots$shift)) dots$lwd <- 1.5
+    if(is.null(dots$lwd)) dots$lwd <- 1.5
 
     ## Plot polygons
     if(type == "polygon") {
