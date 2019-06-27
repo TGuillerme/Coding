@@ -61,3 +61,6 @@ echo "*.Rda" >> ${PROJECT_NAME}/.gitignore
 echo "*.rda" >> ${PROJECT_NAME}/.gitignore
 echo "*.RData" >> ${PROJECT_NAME}/.gitignore
 echo "*.Rapp.history" >> ${PROJECT_NAME}/.gitignore
+
+## Initialising the project on git
+git init ${PROJECT_NAME}
